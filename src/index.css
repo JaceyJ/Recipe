@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+  }
+}
+
+body {
+  @apply bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 min-h-screen;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.meal-slot {
+  @apply border-2 border-dashed border-gray-300 rounded-lg p-2 min-h-[60px] transition-all duration-200;
+}
+
+.meal-slot.drag-over {
+  @apply border-emerald-400 bg-emerald-50 scale-105;
+}
+
+.meal-item {
+  @apply bg-white rounded-lg p-2 shadow-sm border border-gray-200 cursor-move transition-all duration-200;
+}
+
+.meal-item:hover {
+  @apply shadow-md transform scale-105;
+}
+
+.dragging {
+  @apply opacity-50 rotate-3;
+}
+
+.nutrition-card {
+  @apply bg-gradient-to-r from-emerald-100 to-teal-100 rounded-lg p-3 shadow-sm border border-emerald-200;
+}
