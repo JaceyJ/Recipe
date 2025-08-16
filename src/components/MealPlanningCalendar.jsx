@@ -7,17 +7,9 @@ import MealSelectionDialog from '@/components/meal-planner/MealSelectionDialog';
 import CalendarGrid from '@/components/meal-planner/CalendarGrid';
 import DraggableMeal from '@/components/meal-planner/DraggableMeal';
 import ShoppingList from '@/components/meal-planner/ShoppingList';
+import { db } from '../firebase'; // adjust path if needed
+import { collection, getDocs } from 'firebase/firestore';
 
-const PREDEFINED_MEALS = [
-  { id: 'pre-1', name: 'Grilled Chicken Salad', calories: 350, protein: 35, carbs: 15, fat: 18, ingredients: ['Chicken Breast', 'Lettuce', 'Tomato', 'Cucumber', 'Olive Oil'] },
-  { id: 'pre-2', name: 'Salmon with Quinoa', calories: 450, protein: 30, carbs: 40, fat: 20, ingredients: ['Salmon Fillet', 'Quinoa', 'Broccoli', 'Lemon'] },
-  { id: 'pre-3', name: 'Greek Yogurt Bowl', calories: 280, protein: 20, carbs: 35, fat: 8, ingredients: ['Greek Yogurt', 'Granola', 'Honey', 'Berries'] },
-  { id: 'pre-4', name: 'Avocado Toast', calories: 320, protein: 12, carbs: 30, fat: 22, ingredients: ['Avocado', 'Whole Wheat Bread', 'Red Pepper Flakes', 'Salt'] },
-  { id: 'pre-5', name: 'Protein Smoothie', calories: 250, protein: 25, carbs: 20, fat: 10, ingredients: ['Protein Powder', 'Banana', 'Almond Milk', 'Spinach'] },
-  { id: 'pre-6', name: 'Turkey Wrap', calories: 380, protein: 28, carbs: 35, fat: 15, ingredients: ['Turkey Slices', 'Tortilla', 'Lettuce', 'Cheese'] },
-  { id: 'pre-7', name: 'Oatmeal with Berries', calories: 300, protein: 10, carbs: 55, fat: 7, ingredients: ['Oats', 'Berries', 'Cinnamon', 'Maple Syrup'] },
-  { id: 'pre-8', name: 'Lentil Soup', calories: 250, protein: 15, carbs: 45, fat: 2, ingredients: ['Lentils', 'Carrots', 'Celery', 'Onion', 'Vegetable Broth'] },
-];
 
 const MealPlanningCalendar = () => {
   const { toast } = useToast();
@@ -27,6 +19,30 @@ const MealPlanningCalendar = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingMeals, setPendingMeals] = useState([]);
   const [draggedItem, setDraggedItem] = useState(null);
+
+  //==== RETRIEVE MEALS FROM DATABASE ==================================
+  const [meals, setMeals] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMeals = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'recipes'));
+        const mealsData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setMeals(mealsData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching meals:', error);
+      }
+    };
+
+    fetchMeals();
+  }, []);
+
+// ==================================================================================================
 
   useEffect(() => {
     const savedCustomMeals = localStorage.getItem('customMeals');
@@ -112,7 +128,7 @@ const MealPlanningCalendar = () => {
     setDraggedItem(null);
 
     toast({
-      title: "Meal Added! 🍽️",
+      title: "Meal Added!",
       description: `${draggedItem.name} added to ${mealType}`,
     });
   };
@@ -120,7 +136,7 @@ const MealPlanningCalendar = () => {
   const addNewMeal = (meal) => {
     setCustomMeals(prev => [...prev, meal]);
     toast({
-      title: "New Meal Added! 🎉",
+      title: "New Meal Added!",
       description: `${meal.name} is now available for planning`,
     });
   };
@@ -175,7 +191,7 @@ const MealPlanningCalendar = () => {
             <Button onClick={() => setCurrentWeek(new Date(currentWeek.getTime() + 7 * 24 * 60 * 60 * 1000))} variant="outline">Next</Button>
           </div>
           <MealSelectionDialog
-            predefinedMeals={PREDEFINED_MEALS}
+            predefinedMeals={meals}
             customMeals={customMeals}
             onMealSelect={handleMealSelect}
             onAddNewMeal={addNewMeal}

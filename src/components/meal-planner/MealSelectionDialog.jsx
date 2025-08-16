@@ -5,14 +5,31 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Utensils, Search, Star, BookHeart } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { FaEye } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
-const MealCard = ({ meal, onSelect }) => (
+
+
+
+const MealCard = ({ meal, onSelect, navigate }) => (
+  
   <motion.div
     layout
     whileHover={{ scale: 1.03, boxShadow: "0px 5px 15px rgba(0,0,0,0.1)" }}
     className="p-4 rounded-lg border-2 cursor-pointer transition-all border-gray-200 bg-white hover:border-emerald-300"
     onClick={() => onSelect(meal)}
   >
+{/* eye icon button */}
+    <button 
+      className = "absolute top-2 right-3 text gray-500 hover:text-emerald-500"
+      onClick={(e) => {
+        e.stopPropagation(); // prevent triggering onSelect
+        navigate(`/meal/${meal.id}`); // go to detail page
+      }}
+    >
+      <FaEye size={18} />
+    </button>
+
     <h4 className="font-semibold text-gray-800">{meal.name}</h4>
     <div className="text-sm text-gray-600 mt-2 grid grid-cols-2 gap-2">
       <span>🔥 {meal.calories} cal</span>
@@ -24,6 +41,7 @@ const MealCard = ({ meal, onSelect }) => (
 );
 
 const MealSelectionDialog = ({ predefinedMeals, customMeals, onMealSelect, onAddNewMeal, isDialogOpen, setIsDialogOpen }) => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [newMeal, setNewMeal] = useState({ name: '', calories: '', protein: '', carbs: '', fat: '', ingredients: '' });
   const [searchTerm, setSearchTerm] = useState('');
@@ -109,7 +127,7 @@ const MealSelectionDialog = ({ predefinedMeals, customMeals, onMealSelect, onAdd
             <div className="mb-6">
               <h3 className="font-semibold mb-3 flex items-center gap-2 text-lg text-gray-700"><BookHeart className="text-teal-600" /> Your Custom Meals</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredCustomMeals.map(meal => <MealCard key={meal.id} meal={meal} onSelect={handleSelectAndClose} />)}
+                {filteredCustomMeals.map(meal => <MealCard key={meal.id} meal={meal} onSelect={handleSelectAndClose} navigate={navigate} />)}
               </div>
             </div>
           )}
@@ -118,7 +136,7 @@ const MealSelectionDialog = ({ predefinedMeals, customMeals, onMealSelect, onAdd
             <div>
               <h3 className="font-semibold mb-3 flex items-center gap-2 text-lg text-gray-700"><Star className="text-amber-500" /> Predefined Ideas</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredPredefinedMeals.map(meal => <MealCard key={meal.id} meal={meal} onSelect={handleSelectAndClose} />)}
+                {filteredPredefinedMeals.map(meal => <MealCard key={meal.id} meal={meal} onSelect={handleSelectAndClose} navigate={navigate}/>)}
               </div>
             </div>
           )}
