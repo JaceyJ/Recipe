@@ -166,7 +166,9 @@ const MealDetail = () => {
                         className="border px-2 py-1 rounded"
                     />
                     ) : (
-                    <h1 className="text-2xl font-bold">Ingredients: {meal.ingredients}</h1>
+                    <div>
+                        <h1 className="text-2xl font-bold">Ingredients: {meal.ingredients}</h1>
+                    </div>
                     )}  
                 {/* Recipe Instructions*/}
                 {isEditing ? (

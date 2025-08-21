@@ -30,7 +30,10 @@ const MealCard = ({ meal, onSelect, navigate }) => (
       <FaEye size={18} />
     </button>
 
-    <h4 className="font-semibold text-gray-800">{meal.name}</h4>
+    <div className="flex space-x-4">
+      <h4 className="font-semibold text-gray-800">{meal.name}</h4>
+      <h5 className= "text-emerald-500">{meal.servings} servings</h5>
+    </div>
     <div className="text-sm text-gray-600 mt-2 grid grid-cols-2 gap-2">
       <span>🔥 {meal.calories} cal</span>
       <span>💪 {meal.protein}g protein</span>

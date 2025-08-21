@@ -8,7 +8,7 @@ import CalendarGrid from '@/components/meal-planner/CalendarGrid';
 import DraggableMeal from '@/components/meal-planner/DraggableMeal';
 import ShoppingList from '@/components/meal-planner/ShoppingList';
 import { db } from '../firebase'; // adjust path if needed
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, addDoc } from 'firebase/firestore';
 
 
 const MealPlanningCalendar = () => {
@@ -19,6 +19,19 @@ const MealPlanningCalendar = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingMeals, setPendingMeals] = useState([]);
   const [draggedItem, setDraggedItem] = useState(null);
+
+  const getWeekDays = () => {
+    const startOfWeek = new Date(currentWeek);
+    startOfWeek.setDate(currentWeek.getDate() - currentWeek.getDay());
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      return day;
+    });
+  };
+
+  const formatDate = (date) => date.toISOString().split('T')[0];
+  const startDate = new Date(currentWeek);
 
   //==== RETRIEVE MEALS FROM DATABASE ==================================
   const [meals, setMeals] = useState([]);
@@ -44,33 +57,27 @@ const MealPlanningCalendar = () => {
 
 // ==================================================================================================
 
+  // === LOAD MEAL ENTRIES =============================
   useEffect(() => {
-    const savedCustomMeals = localStorage.getItem('customMeals');
-    setCustomMeals(savedCustomMeals ? JSON.parse(savedCustomMeals) : []);
+    async function loadMealPlan() {
+      if(!startDate) return;
 
-    const savedMealPlan = localStorage.getItem('mealPlan');
-    if (savedMealPlan) setMealPlan(JSON.parse(savedMealPlan));
-  }, []);
+      const entriesRef = collection(db, "mealPlans");
+      const snapshot = await getDocs(entriesRef);
 
-  useEffect(() => {
-    localStorage.setItem('customMeals', JSON.stringify(customMeals));
-  }, [customMeals]);
+      const plan = {};
+      snapshot.forEach(doc => {
+        const{ dateKey, mealType, meal } = doc.data();
+        if(!plan[dateKey]) plan[dateKey] = {};
+        if(!plan[dateKey][mealType]) plan[dateKey][mealType] = [];
+        plan[dateKey][mealType].push({ id: doc.id, ...meal });
+      });
 
-  useEffect(() => {
-    localStorage.setItem('mealPlan', JSON.stringify(mealPlan));
-  }, [mealPlan]);
+      setMealPlan(plan);
+    }
+    loadMealPlan();
+  }, [startDate]);
 
-  const getWeekDays = () => {
-    const startOfWeek = new Date(currentWeek);
-    startOfWeek.setDate(currentWeek.getDate() - currentWeek.getDay());
-    return Array.from({ length: 7 }, (_, i) => {
-      const day = new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate() + i);
-      return day;
-    });
-  };
-
-  const formatDate = (date) => date.toISOString().split('T')[0];
 
   const getDayMeals = (date, mealType) => {
     const dateKey = formatDate(date);
@@ -98,7 +105,17 @@ const MealPlanningCalendar = () => {
   };
 
   const handleMealSelect = (meal) => {
-    setPendingMeals(prev => [...prev, { ...meal, id: Date.now() + Math.random(), servings: 1 }]);
+    if(meal.servings <= 0){
+      console.log("[ERROR]: invalid number of servings");
+      return;
+    }
+    const newMeals = [];
+
+    for (let i = 0; i < meal.servings; i++) {
+      newMeals.push({ ...meal, id: Date.now() + Math.random(), servings: 1 });
+    }
+
+    setPendingMeals(prev => [...prev, ...newMeals]);
   };
 
   const handleDragStart = (e, meal) => {
@@ -111,26 +128,39 @@ const MealPlanningCalendar = () => {
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = (e, date, mealType) => {
+  const handleDrop = async (e, date, mealType) => {
     e.preventDefault();
     if (!draggedItem) return;
 
     const dateKey = formatDate(date);
+    const newMeal = { ...draggedItem};
+
     setMealPlan(prevPlan => {
       const newPlan = { ...prevPlan };
       if (!newPlan[dateKey]) newPlan[dateKey] = {};
       if (!newPlan[dateKey][mealType]) newPlan[dateKey][mealType] = [];
-      newPlan[dateKey][mealType].push({ ...draggedItem, id: Date.now() });
+      newPlan[dateKey][mealType] = [...newPlan[dateKey][mealType], newMeal];
       return newPlan;
     });
 
-    setPendingMeals(prev => prev.filter(m => m.id !== draggedItem.id));
-    setDraggedItem(null);
+    try {
+      await addDoc(collection(db, "mealPlans"), {
+        dateKey,
+        mealType,
+        meal: { ...draggedItem, id: Date.now()},
+      });
+    
+      setPendingMeals(prev => prev.filter(m => m.id !== draggedItem.id));
+      setDraggedItem(null);
 
-    toast({
-      title: "Meal Added!",
-      description: `${draggedItem.name} added to ${mealType}`,
-    });
+
+      toast({
+        title: "Meal Added!",
+        description: `${draggedItem.name} added to ${mealType}`,
+      });
+    } catch (err) {
+      console.error("Error saving meal to Firebase: ", err);
+    }
   };
 
   const addNewMeal = (meal) => {
